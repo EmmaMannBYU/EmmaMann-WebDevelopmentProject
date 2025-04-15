@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hangman</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: #fff;
+      margin-bottom: 20px;
+    }
+    .word {
+      font-size: 2rem;
+      letter-spacing: 10px;
+      margin: 20px;
+    }
+    .letters {
+      margin: 20px;
+    }
+    .letters button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .status {
+      font-size: 1.2rem;
+      margin-top: 20px;
+    }
+    #playAgain {
+      padding: 10px 20px;
+      font-size: 1rem;
+      margin-top: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+    <a href="scratch.html"></a>
+  <h1>Hangman Game</h1>
+  <canvas id="hangman" width="200" height="250"></canvas>
+  <div class="word" id="wordDisplay"></div>
+  <div class="letters" id="letterButtons"></div>
+  <div class="status" id="statusMessage"></div>
+  <button id="playAgain" onclick="setupGame()">🔁 Play Again</button>
+
+  <script>
+    const words = ['javascript', 'canvas', 'hangman', 'computer', 'algorithm'];
+    const maxGuesses = 8;
+    let selectedWord = '';
+    let guessedLetters = [];
+    let wrongGuesses = 0;
+
+    const canvas = document.getElementById('hangman');
+    const ctx = canvas.getContext('2d');
+
+    function drawGallows() {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#000';
+      // base
+      ctx.beginPath(); ctx.moveTo(10, 240); ctx.lineTo(190, 240); ctx.stroke();
+      // vertical pole
+      ctx.beginPath(); ctx.moveTo(50, 240); ctx.lineTo(50, 20); ctx.stroke();
+      // top bar
+      ctx.beginPath(); ctx.moveTo(50, 20); ctx.lineTo(150, 20); ctx.stroke();
+      // rope
+      ctx.beginPath(); ctx.moveTo(150, 20); ctx.lineTo(150, 50); ctx.stroke();
+    }
+
+    function drawHangman(step) {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#000';
+
+      switch(step) {
+        case 1: // head
+          ctx.beginPath(); ctx.arc(150, 70, 20, 0, Math.PI * 2); ctx.stroke(); break;
+        case 2: // body
+          ctx.beginPath(); ctx.moveTo(150, 90); ctx.lineTo(150, 150); ctx.stroke(); break;
+        case 3: // left arm
+          ctx.beginPath(); ctx.moveTo(150, 110); ctx.lineTo(120, 130); ctx.stroke(); break;
+        case 4: // right arm
+          ctx.beginPath(); ctx.moveTo(150, 110); ctx.lineTo(180, 130); ctx.stroke(); break;
+        case 5: // left leg
+          ctx.beginPath(); ctx.moveTo(150, 150); ctx.lineTo(120, 190); ctx.stroke(); break;
+        case 6: // right leg
+          ctx.beginPath(); ctx.moveTo(150, 150); ctx.lineTo(180, 190); ctx.stroke(); break;
+        case 7: // left eye X
+          ctx.beginPath(); ctx.moveTo(140, 60); ctx.lineTo(145, 65);
+          ctx.moveTo(145, 60); ctx.lineTo(140, 65); ctx.stroke(); break;
+        case 8: // right eye X
+          ctx.beginPath(); ctx.moveTo(155, 60); ctx.lineTo(160, 65);
+          ctx.moveTo(160, 60); ctx.lineTo(155, 65); ctx.stroke(); break;
+      }
+    }
+
+    function updateWordDisplay() {
+      const display = selectedWord.split('').map(letter =>
+        guessedLetters.includes(letter) ? letter : '_'
+      ).join(' ');
+      document.getElementById('wordDisplay').textContent = display;
+    }
+
+    function handleGuess(letter) {
+      if (guessedLetters.includes(letter) || wrongGuesses >= maxGuesses) return;
+
+      guessedLetters.push(letter);
+      document.getElementById(`btn-${letter}`).disabled = true;
+
+      if (!selectedWord.includes(letter)) {
+        wrongGuesses++;
+        drawHangman(wrongGuesses);
+      }
+
+      updateWordDisplay();
+      checkGameStatus();
+    }
+
+    function checkGameStatus() {
+      const wordGuessed = selectedWord.split('').every(l => guessedLetters.includes(l));
+      const status = document.getElementById('statusMessage');
+      const playAgainBtn = document.getElementById('playAgain');
+
+      if (wordGuessed) {
+        status.textContent = '🎉 You won!';
+        disableAllButtons();
+        playAgainBtn.style.display = 'inline-block';
+      } else if (wrongGuesses >= maxGuesses) {
+        status.textContent = `💀 You lost! The word was "${selectedWord}".`;
+        disableAllButtons();
+        playAgainBtn.style.display = 'inline-block';
+      }
+    }
+
+    function disableAllButtons() {
+      document.querySelectorAll('.letters button').forEach(btn => btn.disabled = true);
+    }
+
+    function setupGame() {
+      selectedWord = words[Math.floor(Math.random() * words.length)];
+      guessedLetters = [];
+      wrongGuesses = 0;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGallows(); // Gallows always visible
+
+      updateWordDisplay();
+      generateLetterButtons();
+      document.getElementById('statusMessage').textContent = '';
+      document.getElementById('playAgain').style.display = 'none';
+    }
+
+    function generateLetterButtons() {
+      const container = document.getElementById('letterButtons');
+      container.innerHTML = '';
+      for (let i = 65; i <= 90; i++) {
+        const letter = String.fromCharCode(i).toLowerCase();
+        const btn = document.createElement('button');
+        btn.textContent = letter;
+        btn.id = `btn-${letter}`;
+        btn.onclick = () => handleGuess(letter);
+        container.appendChild(btn);
+      }
+    }
+
+    setupGame();
+  </script>
+</body>
+</html>
